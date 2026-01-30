@@ -394,7 +394,8 @@
                 '15-RTWG': '24h', '12-RTWT': '24h', '23-RTWF': '24h', '15-RTWU': '24h',
                 '36-RTWG': '24h', '26-RTWF': '24h', '31-RTWE': '24h', '15-RTWV': '24h',
                 '15-NEFB': '24h', '36-RTWH': '24h', '31-RTWG': '24h', '12-RTWH': '12h',
-                '12-RTWR': '12h', '12-RTWS': '12h', '26-RTWO': '12h', '31-RTWH': '12h'
+                '12-RTWR': '12h', '12-RTWS': '12h', '26-RTWO': '12h', '31-RTWH': '12h',
+                '12-NTWR': '24h'
             };
             
             const possibleColumns = ['Rufname'];
@@ -643,9 +644,12 @@
                     NOTF: 0,
                     NOTFNA: 0,
                     'NOTF-NF': 0,
+                    'NOTF-NTW-NF': 0,
                     'NOTF-UE': 0,
                     KBF: 0
                 };
+                
+                const unknownAlarmTypes = {};
                 
                 const weekdays = {
                     'Montag': 0,
@@ -672,12 +676,17 @@
                         alarmTypes.NOTFNA++;
                     } else if (alarmType === 'NOTF-NF') {
                         alarmTypes['NOTF-NF']++;
+                    } else if (alarmType === 'NOTF-NTW-NF') {
+                        alarmTypes['NOTF-NTW-NF']++;
                     } else if (alarmType === 'NOTF-UE') {
                         alarmTypes['NOTF-UE']++;
                     } else if (alarmType.includes('KBF') || alarmType.includes('NOTFVERL')) {
                         alarmTypes.KBF++;
                     } else if (alarmType.includes('NOTF')) {
                         alarmTypes.NOTF++;
+                    } else if (alarmType && alarmType.trim() !== '') {
+                        // Unbekannte Alarmtypen sammeln
+                        unknownAlarmTypes[alarmType] = (unknownAlarmTypes[alarmType] || 0) + 1;
                     }
                     
                     const dateStr = mission['Time Alarm'];
@@ -723,6 +732,7 @@
                     vehicle: vehicle,
                     totalMissions: vehicleData.length,
                     alarmTypes: alarmTypes,
+                    unknownAlarmTypes: unknownAlarmTypes,
                     weekdays: weekdays,
                     avgDispatchTime: formatTimeHMS(avgDispatchTime),
                     dispatchUnder90: dispatchUnder90,
@@ -872,10 +882,23 @@
                             <tr><td>NOTF</td><td>${result.alarmTypes.NOTF}</td></tr>
                             <tr><td>NOTFNA</td><td>${result.alarmTypes.NOTFNA}</td></tr>
                             <tr><td>NOTF-NF</td><td>${result.alarmTypes['NOTF-NF']}</td></tr>
+                            <tr><td>NOTF-NTW-NF</td><td>${result.alarmTypes['NOTF-NTW-NF']}</td></tr>
                             <tr><td>NOTF-UE</td><td>${result.alarmTypes['NOTF-UE']}</td></tr>
                             <tr><td>KBF</td><td>${result.alarmTypes.KBF}</td></tr>
                         </tbody>
                     </table>
+                    
+                    ${Object.keys(result.unknownAlarmTypes).length > 0 ? `
+                    <h3 style="color: var(--color-error);">Nicht zugeordnete Alarmtypen</h3>
+                    <table>
+                        <thead><tr><th>Alarmtyp</th><th>Anzahl</th></tr></thead>
+                        <tbody>
+                            ${Object.entries(result.unknownAlarmTypes).map(([type, count]) => 
+                                `<tr><td>${type}</td><td>${count}</td></tr>`
+                            ).join('')}
+                        </tbody>
+                    </table>
+                    ` : ''}
                     
                     <h3>Wochenverteilung</h3>
                     <table>
@@ -909,37 +932,41 @@
 
         function exportOvertimeToExcel() {
             const exportData = [];
-            exportData.push(['Fahrzeug', 'Schichtmodell', 'Datum', 'Einsatznummer', 'Adresse', 'Alarm', 'Ende', 'Überstunden (h:m:s)', 'Überstunden (Sekunden)']);
             
+            // Kopfzeilen-Block
+            exportData.push(['RETTUNGSDIENST HAMBURG', '', 'ÜBERSTUNDENERFASSUNG DER DRK HAMBURG RETTUNGSDIENST ALTONA UND MITTE gGMBH', '', '', '', '', '']);
+            exportData.push(['STATISTISCHE DATENERFASSUNG', '', '', '', '', '', '', '']);
+            exportData.push(['', '', '', '', '', '', '', '']);
+            exportData.push(['', '', '', '', '', '', '', '']);
+            
+            // Spaltenüberschriften
+            exportData.push(['Fahrzeug', 'Schichtmodell', 'Datum', 'Einsatznummer', 'Adresse', 'Alarm', 'Ende', 'Überstunden (h:m:s)']);
+            
+            // Datenzeilen
             results.forEach(result => {
                 result.entries.forEach(entry => {
+                    // Extrahiere nur das Datum ohne Uhrzeit
+                    let dateOnly = entry.date;
+                    if (dateOnly.includes('.')) {
+                        // Format: DD.MM.YYYY (nur Datum extrahieren)
+                        const parts = dateOnly.split(' ')[0];
+                        if (parts) dateOnly = parts;
+                    }
+                    
                     exportData.push([
                         result.vehicle,
                         result.shiftType === '12h' ? '12h (08:00-20:00)' : '24h (07:00-19:00/19:00-07:00)',
-                        entry.date,
+                        dateOnly,
                         entry.eventNum,
                         entry.address,
                         entry.timeAlarm,
                         entry.timeFinished,
-                        entry.overtimeFormatted,
-                        entry.overtimeSeconds
+                        entry.overtimeFormatted
                     ]);
                 });
             });
             
-            exportData.push([]);
-            exportData.push(['Zusammenfassung']);
-            exportData.push(['Fahrzeug', 'Schichtmodell', 'Gesamt-Überstunden (h:m:s)', 'Gesamt-Überstunden (Sekunden)']);
-            
-            results.forEach(result => {
-                exportData.push([
-                    result.vehicle,
-                    result.shiftType === '12h' ? '12h (08:00-20:00)' : '24h (07:00-19:00/19:00-07:00)',
-                    result.totalOvertimeFormatted,
-                    result.totalOvertimeSeconds
-                ]);
-            });
-            
+            // CSV mit Semikolon-Trennung erstellen
             let csv = exportData.map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
             const BOM = '\uFEFF';
             const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
@@ -951,7 +978,7 @@
 
         function exportStatisticsToExcel() {
             const exportData = [];
-            exportData.push(['Fahrzeug', 'Gesamt-Einsätze', 'NOTF', 'NOTFNA', 'NOTF-NF', 'NOTF-UE', 'KBF', 
+            exportData.push(['Fahrzeug', 'Gesamt-Einsätze', 'NOTF', 'NOTFNA', 'NOTF-NF', 'NOTF-NTW-NF', 'NOTF-UE', 'KBF', 
                              'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So', 
                              'Ø Ausrückezeit', '≤90s', '>90s', 'Ø Einsatzdauer']);
             
@@ -962,6 +989,7 @@
                     result.alarmTypes.NOTF,
                     result.alarmTypes.NOTFNA,
                     result.alarmTypes['NOTF-NF'],
+                    result.alarmTypes['NOTF-NTW-NF'],
                     result.alarmTypes['NOTF-UE'],
                     result.alarmTypes.KBF,
                     result.weekdays.Montag,
