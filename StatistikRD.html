@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einsatzstatistik & Überstunden Tool</title>
+    <style>
+        :root {
+            --color-bg-primary: #fcfcf9;
+            --color-bg-secondary: #fffffe;
+            --color-text-primary: #13343b;
+            --color-text-secondary: #626c7c;
+            --color-accent: #218d8d;
+            --color-accent-hover: #1d747f;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-error: #c0152f;
+            --color-success: #218d8d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--color-text-primary);
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--color-text-primary);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 0.75rem 0;
+            color: var(--color-accent);
+        }
+
+        .mode-selection {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .mode-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .mode-button {
+            background: var(--color-bg-primary);
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .mode-button:hover {
+            border-color: var(--color-accent);
+            background: var(--color-bg-secondary);
+        }
+
+        .mode-button h3 {
+            margin: 0 0 0.5rem 0;
+        }
+
+        .mode-button p {
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .upload-section {
+            background: var(--color-bg-secondary);
+            border: 2px dashed var(--color-border);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.2s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: var(--color-accent-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(94, 82, 64, 0.12);
+            color: var(--color-text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(94, 82, 64, 0.2);
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .status-success {
+            background: rgba(33, 141, 141, 0.1);
+            border: 1px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .status-error {
+            background: rgba(192, 21, 47, 0.1);
+            border: 1px solid var(--color-error);
+            color: var(--color-error);
+        }
+
+        .vehicle-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .vehicle-item {
+            background: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .vehicle-item label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .vehicle-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .config-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .summary-card .label {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--color-accent);
+        }
+
+        .results-section {
+            margin-top: 2rem;
+        }
+
+        .vehicle-result {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .vehicle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .vehicle-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .vehicle-total {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        th {
+            background: var(--color-bg-primary);
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        tr:hover {
+            background: var(--color-bg-primary);
+        }
+
+        .overtime-cell {
+            color: var(--color-accent);
+            font-weight: 500;
+        }
+
+        .export-section {
+            margin-top: 2rem;
+            text-align: right;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Einsatzstatistik & Überstunden Tool</h1>
+
+        <div id="modeSelection" class="mode-selection">
+            <h2>Was möchtest du auswerten?</h2>
+            <div class="mode-buttons">
+                <div class="mode-button" onclick="selectMode('overtime')">
+                    <h3>Überstundenauswertung</h3>
+                    <p>Berechne Überstunden für ausgewählte Fahrzeuge basierend auf Schichtmodellen</p>
+                </div>
+                <div class="mode-button" onclick="selectMode('statistics')">
+                    <h3>Statistikarbeit-Assistenz</h3>
+                    <p>Detaillierte Einsatzstatistik pro Fahrzeug mit Alarmart-Analyse</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="dataInput" class="upload-section hidden">
+            <h2>Einsatzliste einfügen</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 1rem;">
+                Kopiere deine Einsatzliste aus Excel und füge sie hier ein (inkl. Spaltenüberschriften)
+            </p>
+            <textarea id="pasteArea" placeholder="Hier die Tabelle aus Excel einfügen (Strg+V / Cmd+V)..." style="width: 100%; min-height: 200px; padding: 1rem; border: 1px solid var(--color-border); border-radius: 6px; font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+            <div style="margin-top: 1rem;">
+                <button class="btn" onclick="processData()">Daten verarbeiten</button>
+                <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
+            </div>
+            <p id="fileName" style="margin-top: 1rem; color: var(--color-text-secondary);"></p>
+        </div>
+
+        <div id="configSection" class="config-section hidden"></div>
+        <div id="statusMessage"></div>
+        <div id="results" class="results-section"></div>
+        <div id="exportSection" class="export-section hidden"></div>
+    </div>
+
+    <script>
+        let currentMode = null;
+        let excelData = [];
+        let vehicleMapping = {};
+        let results = [];
+
+        const weekendVehicles = ['12-RTWH', '12-RTWR', '12-RTWS', '26-RTWO', '31-RTWH'];
+
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeSelection').classList.add('hidden');
+            document.getElementById('dataInput').classList.remove('hidden');
+        }
+
+        function processData() {
+            const pasteArea = document.getElementById('pasteArea');
+            const pastedText = pasteArea.value.trim();
+            
+            if (!pastedText) {
+                showStatus('Bitte füge zuerst Daten ein', 'error');
+                return;
+            }
+            
+            try {
+                const lines = pastedText.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    showStatus('Zu wenige Zeilen. Stelle sicher, dass Spaltenüberschriften und Daten enthalten sind.', 'error');
+                    return;
+                }
+                
+                const headers = lines[0].split('\t').map(h => h.trim());
+                
+                if (headers.length === 1) {
+                    showStatus('Datenformat nicht erkannt. Bitte stelle sicher, dass du aus Excel kopierst (mit Tab-Trennzeichen).', 'error');
+                    return;
+                }
+                
+                excelData = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split('\t');
+                    if (values.length !== headers.length) continue;
+                    
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index].trim();
+                    });
+                    excelData.push(row);
+                }
+                
+                if (excelData.length === 0) {
+                    showStatus('Keine Daten gefunden', 'error');
+                    return;
+                }
+                
+                document.getElementById('fileName').textContent = `${excelData.length} Zeilen geladen`;
+                showStatus(`${excelData.length} Einsätze erfolgreich eingelesen`, 'success');
+                
+                if (currentMode === 'overtime') {
+                    setupOvertimeMode();
+                } else {
+                    setupStatisticsMode();
+                }
+                
+            } catch (error) {
+                showStatus('Fehler beim Verarbeiten der Daten: ' + error.message, 'error');
+            }
+        }
+
+        function setupOvertimeMode() {
+            const targetVehicles = {
+                '26-RTWP': '24h', '36-RTWF': '24h', '31-RTWF': '24h', '15-RTWT': '24h',
+                '15-RTWG': '24h', '12-RTWT': '24h', '23-RTWF': '24h', '15-RTWU': '24h',
+                '36-RTWG': '24h', '26-RTWF': '24h', '31-RTWE': '24h', '15-RTWV': '24h',
+                '15-NEFB': '24h', '36-RTWH': '24h', '31-RTWG': '24h', '12-RTWH': '12h',
+                '12-RTWR': '12h', '12-RTWS': '12h', '26-RTWO': '12h', '31-RTWH': '12h'
+            };
+            
+            const possibleColumns = ['Rufname'];
+            let vehicleColumn = null;
+            
+            for (const col of possibleColumns) {
+                const testData = excelData.map(row => row[col]).filter(v => v);
+                if (testData.length > 0) {
+                    vehicleColumn = col;
+                    break;
+                }
+            }
+            
+            if (!vehicleColumn) {
+                const availableColumns = excelData.length > 0 ? Object.keys(excelData[0]).join(', ') : 'keine';
+                showStatus(`Keine Fahrzeug-Spalte gefunden. Verfügbare Spalten: ${availableColumns}`, 'error');
+                return;
+            }
+            
+            const allVehicles = [...new Set(excelData.map(row => row[vehicleColumn]).filter(v => v))];
+            const foundTargets = allVehicles.filter(v => targetVehicles[v]);
+            
+            if (foundTargets.length === 0) {
+                showStatus(`Keine der Zielfahrzeuge gefunden. Verfügbare Fahrzeuge: ${allVehicles.join(', ')}`, 'error');
+                return;
+            }
+
+            showStatus(`${foundTargets.length} Zielfahrzeuge gefunden`, 'success');
+
+            const configDiv = document.getElementById('configSection');
+            configDiv.innerHTML = '<h2>Fahrzeug-Auswahl</h2><div class="vehicle-config" id="vehicleConfig"></div><div style="margin-top: 1.5rem;"><button class="btn" onclick="calculateOvertime()">Überstunden berechnen</button></div>';
+            configDiv.classList.remove('hidden');
+            
+            const vehicleConfigDiv = document.getElementById('vehicleConfig');
+            vehicleMapping = {};
+
+            foundTargets.forEach(vehicle => {
+                const safeId = makeSafeId(vehicle);
+                vehicleMapping[safeId] = vehicle;
+                
+                const div = document.createElement('div');
+                div.className = 'vehicle-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `select_${safeId}`;
+                checkbox.checked = true;
+
+                const label = document.createElement('label');
+                label.appendChild(checkbox);
+                const strong = document.createElement('strong');
+                strong.textContent = vehicle;
+                label.appendChild(strong);
+
+                const info = document.createElement('div');
+                info.style.fontSize = '0.85rem';
+                info.style.color = 'var(--color-text-secondary)';
+                info.style.marginTop = '0.5rem';
+                const shiftType = targetVehicles[vehicle];
+                info.textContent = `Schicht: ${shiftType === '12h' ? '08:00-20:00 Uhr' : '07:00-19:00 und 19:00-07:00 Uhr'}`;
+                info.dataset.shiftType = shiftType;
+
+                div.appendChild(label);
+                div.appendChild(info);
+                vehicleConfigDiv.appendChild(div);
+            });
+        }
+
+        function setupStatisticsMode() {
+            const possibleColumns = ['Rufname'];
+            let vehicleColumn = null;
+            
+            for (const col of possibleColumns) {
+                const testData = excelData.map(row => row[col]).filter(v => v);
+                if (testData.length > 0) {
+                    vehicleColumn = col;
+                    break;
+                }
+            }
+            
+            if (!vehicleColumn) {
+                showStatus('Keine Fahrzeug-Spalte gefunden', 'error');
+                return;
+            }
+            
+            const allVehicles = [...new Set(excelData.map(row => row[vehicleColumn]).filter(v => v))];
+            
+            const configDiv = document.getElementById('configSection');
+            configDiv.innerHTML = '<h2>Fahrzeug-Auswahl</h2><div class="vehicle-config" id="vehicleConfig"></div><div style="margin-top: 1.5rem;"><button class="btn" onclick="calculateStatistics()">Statistik berechnen</button></div>';
+            configDiv.classList.remove('hidden');
+            
+            const vehicleConfigDiv = document.getElementById('vehicleConfig');
+            vehicleMapping = {};
+
+            allVehicles.forEach(vehicle => {
+                const safeId = makeSafeId(vehicle);
+                vehicleMapping[safeId] = vehicle;
+                
+                const div = document.createElement('div');
+                div.className = 'vehicle-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `select_${safeId}`;
+                checkbox.checked = true;
+
+                const label = document.createElement('label');
+                label.appendChild(checkbox);
+                const strong = document.createElement('strong');
+                strong.textContent = vehicle;
+                label.appendChild(strong);
+
+                div.appendChild(label);
+                vehicleConfigDiv.appendChild(div);
+            });
+        }
+
+        function makeSafeId(vehicle) {
+            return vehicle.replace(/[^a-zA-Z0-9]/g, '_');
+        }
+
+        function calculateOvertime() {
+            results = [];
+            
+            Object.keys(vehicleMapping).forEach(safeId => {
+                const vehicle = vehicleMapping[safeId];
+                const checkbox = document.getElementById(`select_${safeId}`);
+                if (!checkbox || !checkbox.checked) return;
+
+                const configDiv = document.getElementById('configSection');
+                const vehicleItems = configDiv.querySelectorAll('.vehicle-item');
+                let shiftType = null;
+                
+                vehicleItems.forEach(item => {
+                    const label = item.querySelector('strong');
+                    if (label && label.textContent === vehicle) {
+                        const infoDiv = item.querySelector('div[data-shift-type]');
+                        if (infoDiv) shiftType = infoDiv.dataset.shiftType;
+                    }
+                });
+                
+                if (!shiftType) return;
+                
+                const possibleColumns = ['Rufname'];
+                let vehicleColumn = possibleColumns.find(col => 
+                    excelData.some(row => row[col] === vehicle)
+                );
+                
+                if (!vehicleColumn) return;
+                
+                const vehicleData = excelData.filter(row => row[vehicleColumn] === vehicle);
+                
+                const overtimeEntries = [];
+                let totalOvertimeSeconds = 0;
+                const monthlyOvertime = {};
+
+                vehicleData.forEach(mission => {
+                    const timeFinished = parseDateTime(mission['Time Finished']);
+                    const timeAlarm = parseDateTime(mission['Time Alarm']);
+                    
+                    if (!timeFinished || !timeAlarm) return;
+
+                    let overtimeSeconds = 0;
+
+                    if (shiftType === '12h') {
+                        const endOfShift = new Date(timeFinished);
+                        endOfShift.setHours(20, 0, 0, 0);
+
+                        if (timeFinished > endOfShift) {
+                            overtimeSeconds = Math.floor((timeFinished - endOfShift) / 1000);
+                        }
+                    } else {
+                        const morning = new Date(timeFinished);
+                        morning.setHours(7, 0, 0, 0);
+                        
+                        const evening = new Date(timeFinished);
+                        evening.setHours(19, 0, 0, 0);
+
+                        if (timeAlarm < morning && timeFinished > morning) {
+                            overtimeSeconds = Math.floor((timeFinished - morning) / 1000);
+                        }
+                        else if (timeAlarm < evening && timeFinished > evening) {
+                            overtimeSeconds = Math.floor((timeFinished - evening) / 1000);
+                        }
+                    }
+
+                    if (overtimeSeconds > 0) {
+                        const month = timeFinished.toLocaleDateString('de-DE', {year: 'numeric', month: '2-digit'});
+                        
+                        const street = mission['Hels2.Eventpos.Street1'] || '';
+                        const houseNum = mission['Housenumber'] || '';
+                        const zip = mission['Hels2.Eventpos.Zipcode'] || '';
+                        const city = mission['Hels2.Eventpos.City'] || '';
+                        
+                        const dateColumn = mission['Date'] || mission['Datum'] || '';
+                        const displayDate = dateColumn || timeFinished.toLocaleDateString('de-DE');
+                        
+                        overtimeEntries.push({
+                            date: displayDate,
+                            eventNum: mission['E-Eventnum'] || mission['HE-Eventnum'] || '-',
+                            address: `${street} ${houseNum}, ${zip} ${city}`.trim(),
+                            timeAlarm: formatDateTime(timeAlarm),
+                            timeFinished: formatDateTime(timeFinished),
+                            overtimeSeconds: overtimeSeconds,
+                            overtimeFormatted: formatDuration(overtimeSeconds)
+                        });
+
+                        totalOvertimeSeconds += overtimeSeconds;
+                        monthlyOvertime[month] = (monthlyOvertime[month] || 0) + overtimeSeconds;
+                    }
+                });
+
+                if (totalOvertimeSeconds > 0) {
+                    results.push({
+                        vehicle: vehicle,
+                        shiftType: shiftType,
+                        totalOvertimeSeconds: totalOvertimeSeconds,
+                        totalOvertimeFormatted: formatDuration(totalOvertimeSeconds),
+                        monthlyOvertime: monthlyOvertime,
+                        entries: overtimeEntries
+                    });
+                }
+            });
+
+            displayOvertimeResults();
+        }
+
+        function calculateStatistics() {
+            results = [];
+            
+            Object.keys(vehicleMapping).forEach(safeId => {
+                const vehicle = vehicleMapping[safeId];
+                const checkbox = document.getElementById(`select_${safeId}`);
+                if (!checkbox || !checkbox.checked) return;
+
+                const possibleColumns = ['Rufname'];
+                let vehicleColumn = possibleColumns.find(col => 
+                    excelData.some(row => row[col] === vehicle)
+                );
+                
+                if (!vehicleColumn) return;
+                
+                const vehicleData = excelData.filter(row => row[vehicleColumn] === vehicle);
+                
+                const alarmTypes = {
+                    NOTF: 0,
+                    NOTFNA: 0,
+                    'NOTF-NF': 0,
+                    'NOTF-UE': 0,
+                    KBF: 0
+                };
+                
+                const weekdays = {
+                    'Montag': 0,
+                    'Dienstag': 0,
+                    'Mittwoch': 0,
+                    'Donnerstag': 0,
+                    'Freitag': 0,
+                    'Samstag': 0,
+                    'Sonntag': 0
+                };
+                
+                let totalDispatchTime = 0;
+                let dispatchUnder90 = 0;
+                let dispatchOver90 = 0;
+                let totalDuration = 0;
+                let validDispatchCount = 0;
+                let validDurationCount = 0;
+
+                vehicleData.forEach(mission => {
+                    const alarmType = mission['Name'] || '';
+                    
+                    if (alarmType.includes('NOTFNA') || alarmType.includes('NOTF2NA') || alarmType.includes('NOTFNA-D') || 
+                        alarmType.includes('NOTFNA-UE') || alarmType.includes('NOTFMANV5')) {
+                        alarmTypes.NOTFNA++;
+                    } else if (alarmType === 'NOTF-NF') {
+                        alarmTypes['NOTF-NF']++;
+                    } else if (alarmType === 'NOTF-UE') {
+                        alarmTypes['NOTF-UE']++;
+                    } else if (alarmType.includes('KBF') || alarmType.includes('NOTFVERL')) {
+                        alarmTypes.KBF++;
+                    } else if (alarmType.includes('NOTF')) {
+                        alarmTypes.NOTF++;
+                    }
+                    
+                    const dateStr = mission['Time Alarm'];
+                    if (dateStr) {
+                        const date = parseDateTime(dateStr);
+                        if (date) {
+                            const dayName = date.toLocaleDateString('de-DE', {weekday: 'long'});
+                            if (weekdays[dayName] !== undefined) {
+                                weekdays[dayName]++;
+                            }
+                        }
+                    }
+                    
+                    const dispatchTimeStr = mission['Ausrückdauer (Sek.) errechnet'] || '';
+                    if (dispatchTimeStr) {
+                        const seconds = parseFloat(dispatchTimeStr.toString().replace(',', '.')) || 0;
+                        if (seconds > 0) {
+                            totalDispatchTime += seconds;
+                            validDispatchCount++;
+                            
+                            if (seconds <= 90) {
+                                dispatchUnder90++;
+                            } else {
+                                dispatchOver90++;
+                            }
+                        }
+                    }
+                    
+                    const durationMinutes = mission['Einsatzdauer (Min.)'] || '';
+                    if (durationMinutes) {
+                        const minutes = parseFloat(durationMinutes.toString().replace(',', '.')) || 0;
+                        if (minutes > 0) {
+                            totalDuration += minutes * 60;
+                            validDurationCount++;
+                        }
+                    }
+                });
+
+                const avgDispatchTime = validDispatchCount > 0 ? Math.floor(totalDispatchTime / validDispatchCount) : 0;
+                const avgDuration = validDurationCount > 0 ? Math.floor(totalDuration / validDurationCount) : 0;
+
+                results.push({
+                    vehicle: vehicle,
+                    totalMissions: vehicleData.length,
+                    alarmTypes: alarmTypes,
+                    weekdays: weekdays,
+                    avgDispatchTime: formatTimeHMS(avgDispatchTime),
+                    dispatchUnder90: dispatchUnder90,
+                    dispatchOver90: dispatchOver90,
+                    avgDuration: formatTimeHMS(avgDuration)
+                });
+            });
+
+            displayStatisticsResults();
+        }
+
+        function formatTimeHMS(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function parseDateTime(dateString) {
+            if (!dateString) return null;
+            
+            // Try direct date parsing
+            let date = new Date(dateString);
+            if (!isNaN(date.getTime()) && date.getFullYear() > 1900) {
+                return date;
+            }
+            
+            // Try Excel serial number format
+            if (typeof dateString === 'number' || !isNaN(parseFloat(dateString))) {
+                const numValue = typeof dateString === 'number' ? dateString : parseFloat(dateString);
+                if (numValue > 25569) {
+                    return new Date((numValue - 25569) * 86400 * 1000);
+                }
+            }
+            
+            // Try German date format DD.MM.YYYY HH:MM:SS
+            const germanMatch = dateString.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+            if (germanMatch) {
+                const [_, day, month, year, hour, minute, second] = germanMatch;
+                return new Date(year, month - 1, day, hour, minute, second);
+            }
+            
+            // Try German date format DD.MM.YYYY HH:MM
+            const germanMatch2 = dateString.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
+            if (germanMatch2) {
+                const [_, day, month, year, hour, minute] = germanMatch2;
+                return new Date(year, month - 1, day, hour, minute, 0);
+            }
+            
+            return null;
+        }
+
+        function formatDateTime(date) {
+            if (!date) return '-';
+            return date.toLocaleString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours}h ${minutes}m ${secs}s`;
+        }
+
+        function displayOvertimeResults() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: var(--color-text-secondary);">Keine Überstunden gefunden.</p>';
+                document.getElementById('exportSection').classList.add('hidden');
+                showStatus('Keine Überstunden gefunden', 'error');
+                return;
+            }
+
+            const totalSeconds = results.reduce((sum, r) => sum + r.totalOvertimeSeconds, 0);
+
+            let html = '<h2>Zusammenfassung</h2>';
+            html += '<div class="summary-cards">';
+            html += `<div class="summary-card"><div class="label">Fahrzeuge mit Überstunden</div><div class="value">${results.length}</div></div>`;
+            html += `<div class="summary-card"><div class="label">Gesamt-Überstunden</div><div class="value">${formatDuration(totalSeconds)}</div></div>`;
+            html += '</div><h2>Detaillierte Auswertung</h2>';
+
+            results.forEach(result => {
+                html += `<div class="vehicle-result">
+                    <div class="vehicle-header">
+                        <div>
+                            <div class="vehicle-name">${result.vehicle}</div>
+                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-top: 0.25rem;">
+                                ${result.shiftType === '12h' ? '12h-Schicht (08:00-20:00)' : '24h-Schicht (07:00-19:00 / 19:00-07:00)'}
+                            </div>
+                        </div>
+                        <div class="vehicle-total">${result.totalOvertimeFormatted}</div>
+                    </div>
+                    <h3>Einsätze mit Überstunden</h3>
+                    <table>
+                        <thead><tr><th>Datum</th><th>Einsatznummer</th><th>Adresse</th><th>Alarm</th><th>Ende</th><th>Überstunden</th></tr></thead>
+                        <tbody>`;
+
+                result.entries.forEach(entry => {
+                    html += `<tr>
+                        <td>${entry.date}</td>
+                        <td>${entry.eventNum}</td>
+                        <td>${entry.address}</td>
+                        <td>${entry.timeAlarm}</td>
+                        <td>${entry.timeFinished}</td>
+                        <td class="overtime-cell">${entry.overtimeFormatted}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table></div>';
+            });
+
+            resultsDiv.innerHTML = html;
+            document.getElementById('exportSection').innerHTML = '<button class="btn" onclick="exportOvertimeToExcel()">Als Excel exportieren</button>';
+            document.getElementById('exportSection').classList.remove('hidden');
+            showStatus('Auswertung abgeschlossen', 'success');
+        }
+
+        function displayStatisticsResults() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: var(--color-text-secondary);">Keine Statistik-Daten gefunden.</p>';
+                document.getElementById('exportSection').classList.add('hidden');
+                return;
+            }
+
+            let html = '<h2>Einsatzstatistik</h2>';
+
+            results.forEach(result => {
+                html += `<div class="vehicle-result">
+                    <div class="vehicle-header">
+                        <div class="vehicle-name">${result.vehicle}</div>
+                        <div class="vehicle-total">${result.totalMissions} Einsätze</div>
+                    </div>
+                    
+                    <h3>Alarmarten-Verteilung</h3>
+                    <table>
+                        <thead><tr><th>Alarmtyp</th><th>Anzahl</th></tr></thead>
+                        <tbody>
+                            <tr><td>NOTF</td><td>${result.alarmTypes.NOTF}</td></tr>
+                            <tr><td>NOTFNA</td><td>${result.alarmTypes.NOTFNA}</td></tr>
+                            <tr><td>NOTF-NF</td><td>${result.alarmTypes['NOTF-NF']}</td></tr>
+                            <tr><td>NOTF-UE</td><td>${result.alarmTypes['NOTF-UE']}</td></tr>
+                            <tr><td>KBF</td><td>${result.alarmTypes.KBF}</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Wochenverteilung</h3>
+                    <table>
+                        <thead><tr><th>Wochentag</th><th>Einsätze</th></tr></thead>
+                        <tbody>
+                            <tr><td>Montag</td><td>${result.weekdays.Montag}</td></tr>
+                            <tr><td>Dienstag</td><td>${result.weekdays.Dienstag}</td></tr>
+                            <tr><td>Mittwoch</td><td>${result.weekdays.Mittwoch}</td></tr>
+                            <tr><td>Donnerstag</td><td>${result.weekdays.Donnerstag}</td></tr>
+                            <tr><td>Freitag</td><td>${result.weekdays.Freitag}</td></tr>
+                            <tr><td>Samstag</td><td>${result.weekdays.Samstag}</td></tr>
+                            <tr><td>Sonntag</td><td>${result.weekdays.Sonntag}</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Zeitanalyse</h3>
+                    <div class="summary-cards">
+                        <div class="summary-card"><div class="label">Ø Ausrückezeit</div><div class="value" style="font-size: 1.25rem;">${result.avgDispatchTime}</div></div>
+                        <div class="summary-card"><div class="label">≤ 90 Sek.</div><div class="value">${result.dispatchUnder90}</div></div>
+                        <div class="summary-card"><div class="label">> 90 Sek.</div><div class="value">${result.dispatchOver90}</div></div>
+                        <div class="summary-card"><div class="label">Ø Einsatzdauer</div><div class="value" style="font-size: 1.25rem;">${result.avgDuration}</div></div>
+                    </div>
+                </div>`;
+            });
+
+            resultsDiv.innerHTML = html;
+            document.getElementById('exportSection').innerHTML = '<button class="btn" onclick="exportStatisticsToExcel()">Als Excel exportieren</button>';
+            document.getElementById('exportSection').classList.remove('hidden');
+            showStatus('Statistik abgeschlossen', 'success');
+        }
+
+        function exportOvertimeToExcel() {
+            const exportData = [];
+            exportData.push(['Fahrzeug', 'Schichtmodell', 'Datum', 'Einsatznummer', 'Adresse', 'Alarm', 'Ende', 'Überstunden (h:m:s)', 'Überstunden (Sekunden)']);
+            
+            results.forEach(result => {
+                result.entries.forEach(entry => {
+                    exportData.push([
+                        result.vehicle,
+                        result.shiftType === '12h' ? '12h (08:00-20:00)' : '24h (07:00-19:00/19:00-07:00)',
+                        entry.date,
+                        entry.eventNum,
+                        entry.address,
+                        entry.timeAlarm,
+                        entry.timeFinished,
+                        entry.overtimeFormatted,
+                        entry.overtimeSeconds
+                    ]);
+                });
+            });
+            
+            exportData.push([]);
+            exportData.push(['Zusammenfassung']);
+            exportData.push(['Fahrzeug', 'Schichtmodell', 'Gesamt-Überstunden (h:m:s)', 'Gesamt-Überstunden (Sekunden)']);
+            
+            results.forEach(result => {
+                exportData.push([
+                    result.vehicle,
+                    result.shiftType === '12h' ? '12h (08:00-20:00)' : '24h (07:00-19:00/19:00-07:00)',
+                    result.totalOvertimeFormatted,
+                    result.totalOvertimeSeconds
+                ]);
+            });
+            
+            let csv = exportData.map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ueberstunden_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function exportStatisticsToExcel() {
+            const exportData = [];
+            exportData.push(['Fahrzeug', 'Gesamt-Einsätze', 'NOTF', 'NOTFNA', 'NOTF-NF', 'NOTF-UE', 'KBF', 
+                             'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So', 
+                             'Ø Ausrückezeit', '≤90s', '>90s', 'Ø Einsatzdauer']);
+            
+            results.forEach(result => {
+                exportData.push([
+                    result.vehicle,
+                    result.totalMissions,
+                    result.alarmTypes.NOTF,
+                    result.alarmTypes.NOTFNA,
+                    result.alarmTypes['NOTF-NF'],
+                    result.alarmTypes['NOTF-UE'],
+                    result.alarmTypes.KBF,
+                    result.weekdays.Montag,
+                    result.weekdays.Dienstag,
+                    result.weekdays.Mittwoch,
+                    result.weekdays.Donnerstag,
+                    result.weekdays.Freitag,
+                    result.weekdays.Samstag,
+                    result.weekdays.Sonntag,
+                    result.avgDispatchTime,
+                    result.dispatchUnder90,
+                    result.dispatchOver90,
+                    result.avgDuration
+                ]);
+            });
+            
+            let csv = exportData.map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `einsatzstatistik_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+
+        function resetAll() {
+            currentMode = null;
+            excelData = [];
+            vehicleMapping = {};
+            results = [];
+            document.getElementById('pasteArea').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('modeSelection').classList.remove('hidden');
+            document.getElementById('dataInput').classList.add('hidden');
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('exportSection').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
