@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -692,7 +693,7 @@
                     const dateStr = mission['Time Alarm'];
                     if (dateStr) {
                         const date = parseDateTime(dateStr);
-                        if (date) {
+                        if (date && date instanceof Date && !isNaN(date)) {
                             const dayName = date.toLocaleDateString('de-DE', {weekday: 'long'});
                             if (weekdays[dayName] !== undefined) {
                                 weekdays[dayName]++;
@@ -754,32 +755,41 @@
         function parseDateTime(dateString) {
             if (!dateString) return null;
             
-            // Try direct date parsing
-            let date = new Date(dateString);
-            if (!isNaN(date.getTime()) && date.getFullYear() > 1900) {
-                return date;
-            }
-            
-            // Try Excel serial number format
-            if (typeof dateString === 'number' || !isNaN(parseFloat(dateString))) {
-                const numValue = typeof dateString === 'number' ? dateString : parseFloat(dateString);
-                if (numValue > 25569) {
-                    return new Date((numValue - 25569) * 86400 * 1000);
-                }
-            }
-            
-            // Try German date format DD.MM.YYYY HH:MM:SS
+            // Try German date format DD.MM.YYYY HH:MM:SS first (most reliable)
             const germanMatch = dateString.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
             if (germanMatch) {
                 const [_, day, month, year, hour, minute, second] = germanMatch;
-                return new Date(year, month - 1, day, hour, minute, second);
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
             }
             
             // Try German date format DD.MM.YYYY HH:MM
             const germanMatch2 = dateString.match(/(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})/);
             if (germanMatch2) {
                 const [_, day, month, year, hour, minute] = germanMatch2;
-                return new Date(year, month - 1, day, hour, minute, 0);
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), 0);
+            }
+            
+            // Try German date format DD.MM.YYYY only
+            const germanMatch3 = dateString.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            if (germanMatch3) {
+                const [_, day, month, year] = germanMatch3;
+                return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0);
+            }
+            
+            // Try Excel serial number format
+            if (typeof dateString === 'number' || !isNaN(parseFloat(dateString))) {
+                const numValue = typeof dateString === 'number' ? dateString : parseFloat(dateString);
+                if (numValue > 25569 && numValue < 60000) {
+                    // Excel date serial number (days since 1900-01-01)
+                    const date = new Date((numValue - 25569) * 86400 * 1000);
+                    return date;
+                }
+            }
+            
+            // Last resort: try direct date parsing
+            let date = new Date(dateString);
+            if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+                return date;
             }
             
             return null;
